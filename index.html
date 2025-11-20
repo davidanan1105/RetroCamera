@@ -72,93 +72,142 @@
       align-items: center;
       justify-content: center;
     }
-    .camera-container {
+    .camera-wrapper {
       position: relative;
       width: min(540px, 84vw);
       height: min(560px, 88vw);
       border-radius: 40px;
-      background: var(--camera-shell);
-      box-shadow: var(--camera-shadow), inset -12px -12px 24px rgba(0, 0, 0, 0.05), inset 12px 12px 24px rgba(255, 255, 255, 0.65);
-      padding: 36px 34px 44px;
+      background: #f9f3e8;
+      box-shadow:
+        0 24px 60px rgba(0,0,0,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.7),
+        12px 12px 28px rgba(0,0,0,0.1),
+        -12px -12px 28px rgba(255,255,255,0.8);
+      padding: 28px;
       overflow: hidden;
     }
-    .camera {
+    .camera-surface {
       position: relative;
       width: 100%;
       height: 100%;
       border-radius: 32px;
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.52), rgba(0, 0, 0, 0));
-      box-shadow: inset 8px 8px 18px rgba(0, 0, 0, 0.07), inset -10px -10px 22px rgba(255, 255, 255, 0.65);
+      background: linear-gradient(160deg, rgba(255,255,255,0.6), rgba(0,0,0,0.02));
+      box-shadow: inset 8px 10px 20px rgba(0,0,0,0.06), inset -10px -12px 22px rgba(255,255,255,0.85);
     }
-    .camera-top-strip {
+    .camera-topbar {
       position: absolute;
-      top: 26px; left: 26px; right: 26px;
-      height: 88px;
-      background: linear-gradient(90deg, #ff914d, #ffd96b, #a6e7ff, #a08bff);
-      border-radius: 24px;
-      box-shadow: 0 14px 20px rgba(0,0,0,0.15), inset 0 4px 10px rgba(255,255,255,0.35);
+      top: 26px;
+      left: 26px;
+      right: 26px;
+      height: 70px;
+      border-radius: 22px;
+      background: linear-gradient(90deg, #ff9a4a, #ffe66d, #4ad6dd, #8b6cff);
+      box-shadow: 0 18px 32px rgba(0,0,0,0.18), inset 0 4px 8px rgba(255,255,255,0.45);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 22px;
+      padding: 0 20px;
+      z-index: 4;
     }
-    .viewfinder {
-      width: 74px;
-      height: 46px;
-      background: #0d0d0d;
+    .camera-viewfinder {
+      width: 70px;
+      height: 44px;
       border-radius: 14px;
-      box-shadow: inset 0 0 10px rgba(255,255,255,0.25), 0 8px 16px rgba(0,0,0,0.18);
-      border: 2px solid rgba(255,255,255,0.18);
+      background: #0b0b0b;
+      box-shadow: inset 0 0 10px rgba(255,255,255,0.24), 0 10px 18px rgba(0,0,0,0.22);
+      border: 2px solid rgba(255,255,255,0.16);
     }
-    .flash {
-      width: 88px;
-      height: 46px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.85), rgba(161, 216, 241, 0.8));
-      border-radius: 16px;
-      box-shadow: inset 0 0 18px rgba(117, 196, 230, 0.65), 0 8px 16px rgba(0,0,0,0.16);
-      border: 2px solid rgba(110, 180, 216, 0.4);
+    .camera-flash {
+      width: 90px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #e9fcff, #c9f4ff);
+      box-shadow: inset 0 0 14px rgba(137,242,255,0.7), 0 10px 18px rgba(0,0,0,0.16);
+      border: 2px solid rgba(164, 228, 240, 0.6);
     }
-    .lens {
+    .camera-face {
       position: relative;
-      width: 260px; height: 260px;
-      margin: 120px auto 0;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #2f2f2f, #060606 65%);
-      box-shadow:
-        0 28px 40px rgba(0,0,0,0.35),
-        inset 0 -10px 18px rgba(0,0,0,0.45),
-        inset 0 12px 20px rgba(255,255,255,0.08);
-      border: 18px solid #0d0d0d;
-      cursor: pointer;
-      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      padding: 110px 48px 64px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .lens::before {
-      content: '';
-      position: absolute;
-      inset: 18px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.05), rgba(0,0,0,0.35));
-      pointer-events: none;
+    .lens-mount {
+      position: relative;
+      width: 270px;
+      height: 270px;
+      margin: 0 auto;
+      z-index: 3;
+      filter: drop-shadow(0 24px 32px rgba(0,0,0,0.28));
     }
-    .lens::after {
-      content: '';
+    .camera-lens {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #0f0f0f, #2f2f2f);
+      padding: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        inset 0 -12px 18px rgba(0,0,0,0.55),
+        inset 0 12px 18px rgba(255,255,255,0.08);
+    }
+    .lens-ring {
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2b2b2b, #4a4a4a);
+      box-shadow: inset 0 4px 12px rgba(0,0,0,0.4), inset 0 -6px 10px rgba(255,255,255,0.06);
+      z-index: 1;
+    }
+    .lens-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      padding: 22px;
+      z-index: 2;
+    }
+    .lens-glass {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      overflow: hidden;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.05), rgba(0,0,0,0.6));
+      box-shadow: inset 0 8px 14px rgba(0,0,0,0.55);
+    }
+    .lens-glass video,
+    .lens-glass .fallback {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+      position: absolute;
+      inset: 0;
+    }
+    .lens-overlay {
       position: absolute;
       inset: 0;
       border-radius: 50%;
-      background: radial-gradient(circle at 28% 28%, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%);
-      mix-blend-mode: screen;
+      background: radial-gradient(circle at 28% 28%, rgba(255,255,255,0.45), rgba(255,255,255,0));
       pointer-events: none;
+      mix-blend-mode: screen;
+      z-index: 3;
     }
-    .lens video, .lens .fallback {
-      width: calc(100% - 38px);
-      height: calc(100% - 38px);
-      object-fit: cover;
+    .lens-highlight {
+      position: absolute;
+      inset: 0;
       border-radius: 50%;
-      position: absolute; top: 19px; left: 19px;
-      box-shadow: inset 0 8px 16px rgba(0,0,0,0.4);
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.16), transparent 55%);
+      pointer-events: none;
+      z-index: 4;
     }
     .fallback {
       color: white;
@@ -167,34 +216,45 @@
       justify-content: center;
       text-align: center;
       padding: 20px;
-      background: radial-gradient(circle at 40% 40%, rgba(255,255,255,0.2), rgba(0,0,0,0.85));
+      background: radial-gradient(circle at 40% 40%, rgba(255,255,255,0.22), rgba(0,0,0,0.8));
       font-weight: 600;
     }
-    .shutter {
+    .shutter-button {
       position: absolute;
-      bottom: 40px; right: 46px;
-      width: 112px; height: 112px;
-      background: linear-gradient(160deg, #ffb199, #ff6f61);
+      bottom: 42px;
+      right: 44px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
-      border: 6px solid rgba(255, 255, 255, 0.7);
+      background: linear-gradient(180deg, #ff9e80, #ff6f61);
       box-shadow:
-        0 20px 30px rgba(0,0,0,0.22),
-        inset 0 8px 12px rgba(255,255,255,0.25),
-        inset 0 -10px 16px rgba(0,0,0,0.2);
+        0 16px 24px rgba(0,0,0,0.22),
+        0 0 0 6px rgba(255,255,255,0.65),
+        inset 0 10px 16px rgba(255,255,255,0.18),
+        inset 0 -10px 14px rgba(0,0,0,0.16);
       cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      z-index: 4;
     }
-    .shutter:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 24px 34px rgba(0,0,0,0.26), inset 0 10px 14px rgba(255,255,255,0.3), inset 0 -12px 16px rgba(0,0,0,0.2); }
-    .shutter:active { transform: scale(0.98); }
-    .stand {
+    .shutter-button:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow:
+        0 22px 32px rgba(0,0,0,0.26),
+        0 0 0 6px rgba(255,255,255,0.7),
+        inset 0 12px 18px rgba(255,255,255,0.2),
+        inset 0 -12px 16px rgba(0,0,0,0.18);
+    }
+    .shutter-button:active { transform: scale(0.97); }
+    .camera-shadow {
       position: absolute;
-      left: -40px; right: -40px;
-      bottom: -50px;
-      height: 120px;
+      left: -50px;
+      right: -50px;
+      bottom: -60px;
+      height: 140px;
       background: radial-gradient(ellipse at center, rgba(0,0,0,0.18), transparent 70%);
       filter: blur(18px);
       opacity: 0.7;
-      z-index: -1;
+      z-index: 1;
     }
     .board {
       position: relative;
@@ -344,7 +404,7 @@
       body { overflow-y: auto; }
       .page { grid-template-columns: 1fr; grid-template-rows: auto auto; height: auto; }
       .board { min-height: 460px; }
-      .camera-container { margin-top: 40px; }
+      .camera-wrapper { margin-top: 40px; }
       header { position: fixed; }
     }
   </style>
@@ -356,18 +416,29 @@
   </header>
   <div class="page">
     <div class="camera-area">
-      <div class="camera-container">
-        <div class="camera">
-          <div class="camera-top-strip">
-            <div class="viewfinder"></div>
-            <div class="flash"></div>
+      <div class="camera-wrapper">
+        <div class="camera-surface">
+          <div class="camera-topbar">
+            <div class="camera-viewfinder"></div>
+            <div class="camera-flash"></div>
           </div>
-          <div class="lens" id="lens">
-            <video id="video" autoplay playsinline muted></video>
-            <div class="fallback" id="fallback">Allow webcam to see live preview.</div>
+          <div class="camera-face">
+            <div class="lens-mount">
+              <div class="camera-lens" id="lens">
+                <div class="lens-ring"></div>
+                <div class="lens-inner">
+                  <div class="lens-glass">
+                    <video id="video" autoplay playsinline muted></video>
+                    <div class="fallback" id="fallback">Allow webcam to see live preview.</div>
+                  </div>
+                  <div class="lens-overlay"></div>
+                  <div class="lens-highlight"></div>
+                </div>
+              </div>
+            </div>
+            <div class="shutter-button" id="shutter"></div>
           </div>
-          <div class="shutter" id="shutter"></div>
-          <div class="stand"></div>
+          <div class="camera-shadow"></div>
         </div>
       </div>
     </div>
