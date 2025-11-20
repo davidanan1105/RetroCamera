@@ -516,6 +516,7 @@
       isolation: isolate;
       display: flex;
       flex-direction: column;
+      gap: 12px;
     }
     .polaroid:hover,
     .polaroid-card:hover { transform: translateY(-3px) rotate(var(--hover-tilt, 0deg)); box-shadow: var(--card-shadow-hover, var(--frame-shadow)); }
@@ -523,8 +524,14 @@
     .polaroid-card.shared { box-shadow: 0 20px 44px rgba(255,111,94,0.3); }
     .polaroid.dragging,
     .polaroid-card.dragging { cursor: grabbing; box-shadow: var(--card-shadow-hover, var(--frame-shadow)); }
-    .polaroid img,
-    .polaroid-card img {
+    .photo-wrap {
+      position: relative;
+      width: 100%;
+      border-radius: calc(var(--photo-radius) + 2px);
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .photo-wrap img {
       width: 100%;
       aspect-ratio: 4 / 5;
       object-fit: cover;
@@ -537,6 +544,50 @@
       position: relative;
       z-index: 1;
     }
+    .sticker-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .sticker-instance {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(var(--sticker-scale, 1));
+      font-size: 48px;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.18));
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s ease;
+      pointer-events: auto;
+    }
+    .sticker-instance.dragging { cursor: grabbing; }
+    .sticker-controls {
+      position: absolute;
+      bottom: -8px;
+      right: -8px;
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 10px;
+      padding: 4px 6px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+      pointer-events: auto;
+    }
+    .sticker-controls button {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.12);
+      background: #f7f7f7;
+      cursor: pointer;
+      padding: 0;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .sticker-controls button:hover { background: #fff; }
     .caption {
       font-family: var(--caption-font);
       color: var(--caption-color);
@@ -571,7 +622,7 @@
       display: flex;
       justify-content: var(--actions-justify);
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 2px;
     }
     .tiny-btn {
       background: var(--share-bg);
@@ -721,6 +772,45 @@
     }
     .polaroid--cartoon .polaroid-sticker { opacity: 1; }
 
+    .sticker-panel {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 12px;
+      box-shadow: 0 14px 28px rgba(0,0,0,0.16);
+      padding: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+      min-width: 170px;
+    }
+    .sticker-panel.open { display: flex; }
+    .sticker-panel h4 {
+      margin: 0;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #444;
+    }
+    .sticker-options { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px; }
+    .sticker-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.08);
+      background: linear-gradient(135deg, #fdfdfd, #f4f7fb);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+    .sticker-option:hover { transform: translateY(-1px); box-shadow: 0 10px 16px rgba(0,0,0,0.12); border-color: rgba(0,0,0,0.16); }
+
     .footer-left {
       position: absolute;
       bottom: 18px; left: 24px;
@@ -861,6 +951,13 @@
   </div>
 
   <script>
+    const STICKERS = [
+      { id: 'cat-ears', label: 'Cat ears', emoji: '🐱' },
+      { id: 'sunglasses', label: 'Sunglasses', emoji: '🕶️' },
+      { id: 'crown', label: 'Crown', emoji: '👑' },
+      { id: 'heart', label: 'Heart', emoji: '❤️' }
+    ];
+
     const video = document.getElementById('video');
     const fallback = document.getElementById('fallback');
     const shutter = document.getElementById('shutter');
@@ -879,6 +976,7 @@
     let zIndexCounter = 10;
     let activeShareCard = null;
     let currentPolaroidStyle = 'business';
+    let openStickerPanel = null;
 
     // Webcam setup
     async function initWebcam() {
@@ -921,14 +1019,117 @@
       });
     });
 
+    function closeAllStickerPanels() {
+      document.querySelectorAll('.sticker-panel').forEach(panel => panel.classList.remove('open'));
+      openStickerPanel = null;
+    }
+
+    function attachStickerDragging(sticker, layer) {
+      let dragging = false;
+      let offsetX = 0;
+      let offsetY = 0;
+      const start = (e) => {
+        dragging = true;
+        sticker.classList.add('dragging');
+        const rect = sticker.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        offsetX = clientX - rect.left;
+        offsetY = clientY - rect.top;
+        e.preventDefault();
+        e.stopPropagation();
+      };
+      const move = (e) => {
+        if (!dragging) return;
+        const layerRect = layer.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = Math.min(layerRect.width, Math.max(0, clientX - layerRect.left - offsetX));
+        const y = Math.min(layerRect.height, Math.max(0, clientY - layerRect.top - offsetY));
+        sticker.style.left = `${x}px`;
+        sticker.style.top = `${y}px`;
+      };
+      const end = () => { dragging = false; sticker.classList.remove('dragging'); };
+      sticker.addEventListener('mousedown', start);
+      sticker.addEventListener('touchstart', start, { passive: false });
+      window.addEventListener('mousemove', move);
+      window.addEventListener('touchmove', move);
+      window.addEventListener('mouseup', end);
+      window.addEventListener('touchend', end);
+    }
+
+    function createStickerElement(def, layer) {
+      const sticker = document.createElement('div');
+      sticker.className = 'sticker-instance';
+      sticker.textContent = def.emoji;
+      sticker.dataset.scale = '1';
+      sticker.style.left = `${layer.clientWidth / 2}px`;
+      sticker.style.top = `${layer.clientHeight / 2}px`;
+
+      const controls = document.createElement('div');
+      controls.className = 'sticker-controls';
+      const minus = document.createElement('button');
+      minus.textContent = '-';
+      const plus = document.createElement('button');
+      plus.textContent = '+';
+      controls.appendChild(minus);
+      controls.appendChild(plus);
+
+      const setScale = (val) => {
+        const clamped = Math.max(0.6, Math.min(2.2, val));
+        sticker.dataset.scale = clamped;
+        sticker.style.setProperty('--sticker-scale', clamped);
+      };
+
+      const adjust = (delta) => setScale(parseFloat(sticker.dataset.scale || '1') + delta);
+      minus.addEventListener('click', (e) => { e.stopPropagation(); adjust(-0.15); });
+      plus.addEventListener('click', (e) => { e.stopPropagation(); adjust(0.15); });
+
+      sticker.appendChild(controls);
+      attachStickerDragging(sticker, layer);
+      setScale(1);
+      return sticker;
+    }
+
+    function createStickerPanel(layer) {
+      const panel = document.createElement('div');
+      panel.className = 'sticker-panel';
+      const title = document.createElement('h4');
+      title.textContent = 'Add stickers';
+      const grid = document.createElement('div');
+      grid.className = 'sticker-options';
+      STICKERS.forEach(def => {
+        const opt = document.createElement('button');
+        opt.className = 'sticker-option';
+        opt.textContent = `${def.emoji} ${def.label}`;
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const sticker = createStickerElement(def, layer);
+          layer.appendChild(sticker);
+        });
+        grid.appendChild(opt);
+      });
+      panel.appendChild(title);
+      panel.appendChild(grid);
+      panel.addEventListener('click', (e) => e.stopPropagation());
+      return panel;
+    }
+
     function createPolaroid(imgSrc) {
       const card = document.createElement('div');
       card.className = 'polaroid polaroid-card';
       card.classList.add(`polaroid--${currentPolaroidStyle}`);
       const sticker = document.createElement('div');
       sticker.className = 'polaroid-sticker';
+
+      const photoWrap = document.createElement('div');
+      photoWrap.className = 'photo-wrap';
       const img = document.createElement('img');
       img.src = imgSrc;
+      const stickerLayer = document.createElement('div');
+      stickerLayer.className = 'sticker-layer';
+      photoWrap.appendChild(img);
+      photoWrap.appendChild(stickerLayer);
 
       const caption = document.createElement('div');
       caption.className = 'caption';
@@ -940,16 +1141,23 @@
 
       const actions = document.createElement('div');
       actions.className = 'actions';
+      const stickerBtn = document.createElement('button');
+      stickerBtn.className = 'tiny-btn sticker-trigger';
+      stickerBtn.textContent = 'Stickers';
       const shareBtn = document.createElement('button');
       shareBtn.className = 'tiny-btn';
       shareBtn.textContent = 'Share';
+      actions.appendChild(stickerBtn);
       actions.appendChild(shareBtn);
 
+      const stickerPanel = createStickerPanel(stickerLayer);
+
       card.appendChild(sticker);
-      card.appendChild(img);
+      card.appendChild(photoWrap);
       card.appendChild(caption);
       card.appendChild(date);
       card.appendChild(actions);
+      card.appendChild(stickerPanel);
 
       // Random rotation and offset
       const rotation = (Math.random() * 16) - 8;
@@ -968,10 +1176,24 @@
         activeShareCard = card;
         openModal(shareModal);
       });
+      stickerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (openStickerPanel && openStickerPanel !== stickerPanel) {
+          openStickerPanel.classList.remove('open');
+        }
+        stickerPanel.classList.toggle('open');
+        openStickerPanel = stickerPanel.classList.contains('open') ? stickerPanel : null;
+      });
 
       board.appendChild(card);
       board.classList.add('has-content');
     }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.sticker-panel') && !e.target.closest('.sticker-trigger')) {
+        closeAllStickerPanels();
+      }
+    });
 
     function enableCaptionEditing(captionEl) {
       captionEl.addEventListener('click', () => {
