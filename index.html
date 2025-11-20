@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Retro Camera</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Shadows+Into+Light&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Shadows+Into+Light&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaQ3vN8xmKQEiC5EvhczHxVh9Yx8RJWb1x1o1t4bm/FYnGV8eK3opgDdGztqKqRR3YKHyCuXapnwMaijFvS5g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     :root {
@@ -256,8 +256,43 @@
       opacity: 0.7;
       z-index: 1;
     }
+    .board-area {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      height: 100%;
+    }
+    .style-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 16px;
+      padding: 10px 14px;
+      box-shadow: 0 12px 22px rgba(0,0,0,0.12);
+      width: fit-content;
+    }
+    .style-picker .label { font-weight: 700; font-size: 13px; letter-spacing: 0.05em; }
+    .style-options { display: flex; gap: 8px; }
+    .style-option {
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 14px;
+      padding: 8px 12px;
+      background: #f8f8f8;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .style-option:hover { transform: translateY(-2px); box-shadow: 0 10px 18px rgba(0,0,0,0.14); }
+    .style-option.active { background: #fff; border-color: #a27dfc; box-shadow: 0 12px 24px rgba(130,111,255,0.22); }
+
     .board {
       position: relative;
+      flex: 1;
       background: linear-gradient(180deg, #f4f4f4, #e8e8e8);
       border: 2px dashed #d0d0d0;
       border-radius: 20px;
@@ -276,46 +311,73 @@
       pointer-events: none;
     }
     .board.has-content::after { display: none; }
+
     .polaroid,
     .polaroid-card {
+      --frame-bg: #fdfbf6;
+      --frame-border: 1px solid rgba(0,0,0,0.06);
+      --frame-radius: 20px;
+      --frame-shadow: 0 18px 36px rgba(0,0,0,0.16);
+      --photo-padding: 0px;
+      --photo-border: none;
+      --photo-radius: 12px;
+      --photo-backdrop: linear-gradient(180deg, #f0f0f0, #e3e3e3);
+      --photo-shadow: inset 0 2px 6px rgba(0,0,0,0.08);
+      --caption-font: 'Shadows Into Light', cursive;
+      --caption-color: #363636;
+      --caption-size: 18px;
+      --caption-align: center;
+      --caption-tilt: none;
+      --caption-gap: 12px;
+      --date-color: #7a7a7a;
+      --date-weight: 600;
+      --date-align: flex-start;
+      --actions-justify: flex-end;
       position: absolute;
       width: 220px;
-      background: var(--card-bg);
-      border-radius: 18px;
-      border: 1px solid var(--card-border);
-      box-shadow: var(--card-shadow);
+      background: var(--frame-bg);
+      border-radius: var(--frame-radius);
+      border: var(--frame-border);
+      box-shadow: var(--frame-shadow);
       padding: 14px 14px 20px;
       cursor: grab;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       user-select: none;
+      isolation: isolate;
+      display: flex;
+      flex-direction: column;
     }
     .polaroid:hover,
-    .polaroid-card:hover { transform: translateY(-3px); box-shadow: var(--card-shadow-hover); }
+    .polaroid-card:hover { transform: translateY(-3px) rotate(var(--hover-tilt, 0deg)); box-shadow: var(--card-shadow-hover, var(--frame-shadow)); }
     .polaroid.shared,
     .polaroid-card.shared { box-shadow: 0 20px 44px rgba(255,111,94,0.3); }
     .polaroid.dragging,
-    .polaroid-card.dragging { cursor: grabbing; box-shadow: var(--card-shadow-hover); }
+    .polaroid-card.dragging { cursor: grabbing; box-shadow: var(--card-shadow-hover, var(--frame-shadow)); }
     .polaroid img,
     .polaroid-card img {
       width: 100%;
       aspect-ratio: 4 / 5;
       object-fit: cover;
-      border-radius: 14px;
+      border-radius: var(--photo-radius);
       display: block;
-      background: linear-gradient(180deg, #f0f0f0, #e3e3e3);
-      box-shadow: inset 0 2px 6px rgba(0,0,0,0.08);
+      background: var(--photo-backdrop);
+      box-shadow: var(--photo-shadow);
+      padding: var(--photo-padding);
+      border: var(--photo-border);
     }
     .caption {
-      font-family: 'Shadows Into Light', cursive;
-      color: var(--card-caption);
-      font-size: 18px;
-      margin: 12px 6px 4px;
+      font-family: var(--caption-font);
+      color: var(--caption-color);
+      font-size: var(--caption-size);
+      margin: var(--caption-gap) 6px 6px;
       min-height: 24px;
       letter-spacing: 0.02em;
+      text-align: var(--caption-align);
+      transform: var(--caption-tilt);
     }
     .caption input {
-      font-family: 'Shadows Into Light', cursive;
-      font-size: 18px;
+      font-family: var(--caption-font);
+      font-size: var(--caption-size);
       width: 100%;
       border: none;
       border-bottom: 1px solid #cfcfcf;
@@ -326,15 +388,16 @@
     }
     .date {
       font-size: 12px;
-      color: var(--card-date);
+      color: var(--date-color);
       letter-spacing: 0.08em;
       margin-left: 6px;
-      font-weight: 600;
+      font-weight: var(--date-weight);
+      align-self: var(--date-align);
     }
     .polaroid .actions,
     .polaroid-card .actions {
       display: flex;
-      justify-content: flex-end;
+      justify-content: var(--actions-justify);
       gap: 8px;
       margin-top: 10px;
     }
@@ -342,12 +405,91 @@
       background: var(--share-bg);
       border: 1px solid var(--share-border);
       border-radius: 999px;
-      padding: 6px 12px;
+      padding: 7px 14px;
       font-size: 12px;
       cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
     }
-    .tiny-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 16px rgba(0,0,0,0.12); background: var(--share-bg-hover); }
+    .tiny-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 16px rgba(0,0,0,0.12); background: var(--share-bg-hover); border-color: rgba(0,0,0,0.16); }
+
+    .polaroid--classic {
+      --frame-bg: #fdfbf6;
+      --frame-border: 1px solid rgba(0,0,0,0.06);
+      --frame-radius: 20px;
+      --frame-shadow: 0 18px 36px rgba(0,0,0,0.16);
+      --card-shadow-hover: 0 22px 48px rgba(0,0,0,0.22);
+      --caption-font: 'Shadows Into Light', cursive;
+      --caption-color: #363636;
+      --caption-size: 18px;
+      --caption-align: center;
+      --caption-gap: 14px;
+      --date-color: #7d7d7d;
+      --photo-radius: 12px;
+      --photo-padding: 0px;
+      --photo-border: none;
+      --photo-backdrop: linear-gradient(180deg, #f0f0f0, #e3e3e3);
+    }
+
+    .polaroid--minimal {
+      --frame-bg: #f4f6fb;
+      --frame-border: 1px solid rgba(90,110,140,0.12);
+      --frame-radius: 14px;
+      --frame-shadow: 0 12px 24px rgba(0,0,0,0.12);
+      --card-shadow-hover: 0 18px 32px rgba(0,0,0,0.16);
+      --caption-font: 'Montserrat', sans-serif;
+      --caption-color: #2f3542;
+      --caption-size: 15px;
+      --caption-align: right;
+      --caption-gap: 10px;
+      --date-color: #7f8c9f;
+      --date-weight: 500;
+      --date-align: flex-end;
+      --actions-justify: flex-end;
+      --photo-padding: 4px;
+      --photo-border: 1px solid rgba(255,255,255,0.9);
+      --photo-radius: 10px;
+      --photo-backdrop: #ffffff;
+      --photo-shadow: inset 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .polaroid--playful {
+      --frame-bg: #ffffff;
+      --frame-border: 2px solid rgba(255,170,200,0.9);
+      --frame-radius: 24px;
+      --frame-shadow: 0 16px 30px rgba(255,150,190,0.45);
+      --card-shadow-hover: 0 20px 40px rgba(255,150,190,0.55);
+      --caption-font: 'Fredoka', 'Shadows Into Light', cursive;
+      --caption-color: #3a2b2f;
+      --caption-size: 18px;
+      --caption-align: left;
+      --caption-gap: 14px;
+      --caption-tilt: rotate(-2deg);
+      --date-color: #8f7f8d;
+      --date-weight: 600;
+      --photo-padding: 6px;
+      --photo-border: 1px solid rgba(255,170,200,0.6);
+      --photo-radius: 14px;
+      --photo-backdrop: linear-gradient(135deg, rgba(255,240,245,0.9), #ffffff);
+      --photo-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
+      --hover-tilt: 1deg;
+    }
+
+    .polaroid-sticker {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      width: 48px;
+      height: 16px;
+      border-radius: 6px;
+      background: linear-gradient(120deg, rgba(255,210,120,0.9), rgba(255,170,200,0.9));
+      box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+      transform: rotate(-6deg);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .polaroid--playful .polaroid-sticker { opacity: 1; }
 
     .footer-left {
       position: absolute;
@@ -442,7 +584,17 @@
         </div>
       </div>
     </div>
-    <div class="board" id="board"></div>
+    <div class="board-area">
+      <div class="style-picker" id="stylePicker">
+        <span class="label">Frame style</span>
+        <div class="style-options">
+          <button class="style-option active" data-style="classic">Classic Cream</button>
+          <button class="style-option" data-style="minimal">Minimal Borderless</button>
+          <button class="style-option" data-style="playful">Playful Pastel</button>
+        </div>
+      </div>
+      <div class="board" id="board"></div>
+    </div>
   </div>
   <div class="footer-left">
     <button class="ghost-btn" id="galleryBtn">View Public Pinboard Gallery</button>
@@ -483,10 +635,12 @@
     const galleryModal = document.getElementById('galleryModal');
     const shareModal = document.getElementById('shareModal');
     const confirmShare = document.getElementById('confirmShare');
+    const styleOptions = document.querySelectorAll('.style-option');
 
     let currentStream = null;
     let zIndexCounter = 10;
     let activeShareCard = null;
+    let currentPolaroidStyle = 'classic';
 
     // Webcam setup
     async function initWebcam() {
@@ -521,9 +675,20 @@
       return `${d.getFullYear()}/${mm}/${dd}`;
     }
 
+    // Style selection
+    styleOptions.forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentPolaroidStyle = btn.dataset.style;
+        styleOptions.forEach(opt => opt.classList.toggle('active', opt === btn));
+      });
+    });
+
     function createPolaroid(imgSrc) {
       const card = document.createElement('div');
       card.className = 'polaroid polaroid-card';
+      card.classList.add(`polaroid--${currentPolaroidStyle}`);
+      const sticker = document.createElement('div');
+      sticker.className = 'polaroid-sticker';
       const img = document.createElement('img');
       img.src = imgSrc;
 
@@ -542,6 +707,7 @@
       shareBtn.textContent = 'Share';
       actions.appendChild(shareBtn);
 
+      card.appendChild(sticker);
       card.appendChild(img);
       card.appendChild(caption);
       card.appendChild(date);
