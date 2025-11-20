@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Camera</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Shadows+Into+Light&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaQ3vN8xmKQEiC5EvhczHxVh9Yx8RJWb1x1o1t4bm/FYnGV8eK3opgDdGztqKqRR3YKHyCuXapnwMaijFvS5g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    :root {
+      --cream: #f4f0e6;
+      --dark: #222;
+      --accent: #ff6f5e;
+      --grey: #d6d6d6;
+      --shadow: 0 14px 28px rgba(0, 0, 0, 0.2), 0 10px 10px rgba(0, 0, 0, 0.14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle, #dcdcdc 1px, transparent 1px), #f3f3f3;
+      background-size: 22px 22px;
+      min-height: 100vh;
+      color: var(--dark);
+      overflow: hidden;
+    }
+    .page {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 40px;
+      padding: 32px 40px 48px 40px;
+    }
+    header {
+      position: absolute;
+      top: 24px;
+      right: 32px;
+      display: flex;
+      gap: 12px;
+      z-index: 20;
+    }
+    .pill-btn {
+      padding: 12px 22px;
+      border-radius: 999px;
+      background: white;
+      border: 2px solid #c9c9c9;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .pill-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .pill-btn:active { transform: translateY(0); }
+    .camera-area {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .camera {
+      position: relative;
+      width: min(520px, 80vw);
+      height: min(520px, 80vw);
+      background: linear-gradient(145deg, #faf7ef, #e2dbcc);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 36px;
+      overflow: hidden;
+    }
+    .camera:before, .camera:after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      margin: auto;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0.25;
+    }
+    .camera:before { width: 420px; height: 420px; top: -80px; background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(0,0,0,0)); }
+    .camera:after { width: 260px; height: 260px; top: 30px; background: radial-gradient(circle, rgba(255,255,255,0.6), rgba(0,0,0,0)); }
+    .camera-top-strip {
+      position: absolute;
+      top: 18px; left: 18px; right: 18px;
+      height: 76px;
+      background: linear-gradient(90deg, #ff9c6b, #ffd46b, #9ae8ff, #a0a5ff);
+      border-radius: 18px;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .lens {
+      position: relative;
+      width: 240px; height: 240px;
+      margin: 60px auto 0;
+      background: radial-gradient(circle at 30% 30%, #3a3a3a, #0b0b0b 60%);
+      border-radius: 50%;
+      border: 14px solid #111;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.35), inset 0 0 10px rgba(255,255,255,0.12);
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lens video, .lens .fallback {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      position: absolute; top:0; left:0;
+    }
+    .fallback {
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      background: radial-gradient(circle at 40% 40%, rgba(255,255,255,0.18), rgba(0,0,0,0.85));
+      font-weight: 600;
+    }
+    .shutter {
+      position: absolute;
+      bottom: 34px; right: 60px;
+      width: 90px; height: 90px;
+      background: radial-gradient(circle at 30% 30%, #ff8d75, #ff4d42);
+      border-radius: 50%;
+      border: 6px solid white;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+    .shutter:hover { transform: scale(1.04); }
+    .shutter:active { transform: scale(0.98); }
+    .viewfinder {
+      position: absolute;
+      top: 32px; left: 32px;
+      width: 70px; height: 40px;
+      background: #1e1e1e;
+      border-radius: 10px;
+      box-shadow: inset 0 0 12px rgba(255,255,255,0.2);
+    }
+    .flash {
+      position: absolute;
+      top: 36px; right: 36px;
+      width: 70px; height: 36px;
+      background: #d8edf3;
+      border-radius: 12px;
+      box-shadow: inset 0 0 12px rgba(0,0,0,0.15);
+      border: 2px solid #b8d7df;
+    }
+    .stand {
+      position: absolute;
+      left: -40px; right: -40px;
+      bottom: -30px;
+      height: 80px;
+      background: #cfc7ba;
+      border-radius: 40px;
+      filter: blur(18px);
+      opacity: 0.7;
+      z-index: -1;
+    }
+    .board {
+      position: relative;
+      background: linear-gradient(180deg, #f4f4f4, #e8e8e8);
+      border: 2px dashed #d0d0d0;
+      border-radius: 20px;
+      box-shadow: inset 0 4px 12px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    .board::after {
+      content: 'Snap a moment';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: #b5b5b5;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    .board.has-content::after { display: none; }
+    .polaroid {
+      position: absolute;
+      width: 200px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+      padding: 10px 10px 18px;
+      cursor: grab;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      user-select: none;
+    }
+    .polaroid.shared { box-shadow: 0 18px 36px rgba(255,111,94,0.35); }
+    .polaroid.dragging { cursor: grabbing; box-shadow: 0 16px 36px rgba(0,0,0,0.28); }
+    .polaroid img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 6px;
+      display: block;
+      background: #ddd;
+    }
+    .caption {
+      font-family: 'Shadows Into Light', cursive;
+      color: #3f3f3f;
+      font-size: 17px;
+      margin: 10px 4px 4px;
+      min-height: 22px;
+    }
+    .caption input {
+      font-family: 'Shadows Into Light', cursive;
+      font-size: 17px;
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #ccc;
+      outline: none;
+      background: #fffbe7;
+    }
+    .date {
+      font-size: 11px;
+      color: #6a6a6a;
+      letter-spacing: 0.08em;
+      margin-left: 4px;
+    }
+    .polaroid .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .tiny-btn {
+      background: #f4f4f4;
+      border: 1px solid #d0d0d0;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .tiny-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0,0,0,0.12); }
+    .footer-left {
+      position: absolute;
+      bottom: 18px; left: 24px;
+      z-index: 15;
+    }
+    .footer-right {
+      position: absolute;
+      bottom: 18px; right: 24px;
+      color: #707070;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+    }
+    .ghost-btn {
+      background: rgba(255,255,255,0.8);
+      border: 1px solid #cfcfcf;
+      border-radius: 14px;
+      padding: 8px 14px;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+      font-weight: 600;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .ghost-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 16px;
+      width: min(420px, 90vw);
+      padding: 26px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .modal h3 { margin-top: 0; }
+    .modal .close-btn {
+      margin-top: 16px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: #1f1f1f;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    @media (max-width: 980px) {
+      body { overflow-y: auto; }
+      .page { grid-template-columns: 1fr; grid-template-rows: auto auto; height: auto; }
+      .board { min-height: 460px; }
+      .camera { margin-top: 40px; }
+      header { position: fixed; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="pill-btn" id="downloadBtn">DOWNLOAD</button>
+    <button class="pill-btn" id="resetBtn">RESET</button>
+  </header>
+  <div class="page">
+    <div class="camera-area">
+      <div class="camera">
+        <div class="camera-top-strip"></div>
+        <div class="viewfinder"></div>
+        <div class="flash"></div>
+        <div class="lens" id="lens">
+          <video id="video" autoplay playsinline muted></video>
+          <div class="fallback" id="fallback">Allow webcam to see live preview.</div>
+        </div>
+        <div class="shutter" id="shutter"></div>
+        <div class="stand"></div>
+      </div>
+    </div>
+    <div class="board" id="board"></div>
+  </div>
+  <div class="footer-left">
+    <button class="ghost-btn" id="galleryBtn">View Public Pinboard Gallery</button>
+  </div>
+  <div class="footer-right">Use Once to capture your day through everyone's eyes</div>
+
+  <canvas id="captureCanvas" width="640" height="480" style="display:none;"></canvas>
+
+  <div class="modal-backdrop" id="galleryModal">
+    <div class="modal">
+      <h3>Public Pinboard Gallery</h3>
+      <p>This is a demo gallery. In the real app, we would show shared photos here.</p>
+      <button class="close-btn" data-close="galleryModal">Close</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="shareModal">
+    <div class="modal">
+      <h3>Share to Public Pinboard?</h3>
+      <p>There's no backend here, but imagine your snap being shared with the world.</p>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+        <button class="pill-btn" id="confirmShare">Share</button>
+        <button class="pill-btn" data-close="shareModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const fallback = document.getElementById('fallback');
+    const shutter = document.getElementById('shutter');
+    const lens = document.getElementById('lens');
+    const canvas = document.getElementById('captureCanvas');
+    const board = document.getElementById('board');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const galleryBtn = document.getElementById('galleryBtn');
+    const galleryModal = document.getElementById('galleryModal');
+    const shareModal = document.getElementById('shareModal');
+    const confirmShare = document.getElementById('confirmShare');
+
+    let currentStream = null;
+    let zIndexCounter = 10;
+    let activeShareCard = null;
+
+    // Webcam setup
+    async function initWebcam() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        currentStream = stream;
+        video.srcObject = stream;
+        video.onloadedmetadata = () => video.play();
+        fallback.style.display = 'none';
+      } catch (err) {
+        console.error('Webcam error', err);
+        fallback.textContent = 'Webcam not available. Grant permission to preview.';
+        fallback.style.display = 'flex';
+      }
+    }
+    initWebcam();
+
+    // Capture logic
+    function captureFrame() {
+      if (!video.videoWidth) return null;
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/png');
+    }
+
+    function formatToday() {
+      const d = new Date();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}/${mm}/${dd}`;
+    }
+
+    function createPolaroid(imgSrc) {
+      const card = document.createElement('div');
+      card.className = 'polaroid';
+      const img = document.createElement('img');
+      img.src = imgSrc;
+
+      const caption = document.createElement('div');
+      caption.className = 'caption';
+      caption.textContent = 'MAY I MEET YOU';
+
+      const date = document.createElement('div');
+      date.className = 'date';
+      date.textContent = formatToday();
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      const shareBtn = document.createElement('button');
+      shareBtn.className = 'tiny-btn';
+      shareBtn.textContent = 'Share';
+      actions.appendChild(shareBtn);
+
+      card.appendChild(img);
+      card.appendChild(caption);
+      card.appendChild(date);
+      card.appendChild(actions);
+
+      // Random rotation and offset
+      const rotation = (Math.random() * 16) - 8;
+      const availableX = Math.max(40, board.clientWidth - 220);
+      const availableY = Math.max(60, board.clientHeight - 280);
+      const offsetX = 20 + Math.random() * availableX;
+      const offsetY = 20 + Math.random() * availableY;
+      card.style.transform = `rotate(${rotation}deg)`;
+      card.style.left = `${offsetX}px`;
+      card.style.top = `${offsetY}px`;
+      card.style.zIndex = ++zIndexCounter;
+
+      enableDragging(card);
+      enableCaptionEditing(caption);
+      shareBtn.addEventListener('click', () => {
+        activeShareCard = card;
+        openModal(shareModal);
+      });
+
+      board.appendChild(card);
+      board.classList.add('has-content');
+    }
+
+    function enableCaptionEditing(captionEl) {
+      captionEl.addEventListener('click', () => {
+        const currentText = captionEl.textContent;
+        const input = document.createElement('input');
+        input.value = currentText;
+        captionEl.textContent = '';
+        captionEl.appendChild(input);
+        input.focus();
+        const commit = () => {
+          captionEl.textContent = input.value || 'MAY I MEET YOU';
+        };
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') input.blur();
+          if (e.key === 'Escape') { input.value = currentText; input.blur(); }
+        });
+      });
+    }
+
+    // Drag and drop
+    function enableDragging(card) {
+      let offsetX = 0, offsetY = 0, dragging = false;
+      const startDrag = (e) => {
+        dragging = true;
+        card.classList.add('dragging');
+        card.style.zIndex = ++zIndexCounter;
+        const rect = card.getBoundingClientRect();
+        const boardRect = board.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        offsetX = clientX - rect.left;
+        offsetY = clientY - rect.top;
+        e.preventDefault();
+      };
+      const onMove = (e) => {
+        if (!dragging) return;
+        const boardRect = board.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - boardRect.left - offsetX;
+        const y = clientY - boardRect.top - offsetY;
+        card.style.left = `${Math.min(boardRect.width - card.offsetWidth, Math.max(0, x))}px`;
+        card.style.top = `${Math.min(boardRect.height - card.offsetHeight, Math.max(0, y))}px`;
+      };
+      const endDrag = () => { dragging = false; card.classList.remove('dragging'); };
+      card.addEventListener('mousedown', startDrag);
+      card.addEventListener('touchstart', startDrag);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('touchmove', onMove);
+      window.addEventListener('mouseup', endDrag);
+      window.addEventListener('touchend', endDrag);
+    }
+
+    // Download board
+    downloadBtn.addEventListener('click', async () => {
+      if (!board.children.length) return;
+      const canvasOut = await html2canvas(board, { backgroundColor: null });
+      const link = document.createElement('a');
+      link.download = 'retro-camera.png';
+      link.href = canvasOut.toDataURL('image/png');
+      link.click();
+    });
+
+    // Reset board
+    resetBtn.addEventListener('click', () => {
+      board.innerHTML = '';
+      board.classList.remove('has-content');
+    });
+
+    // Capture events
+    const takePhoto = () => {
+      const src = captureFrame();
+      if (src) createPolaroid(src);
+    };
+    shutter.addEventListener('click', takePhoto);
+    lens.addEventListener('click', takePhoto);
+
+    // Modals
+    function openModal(modal) { modal.classList.add('active'); }
+    function closeModal(modal) { modal.classList.remove('active'); }
+    galleryBtn.addEventListener('click', () => openModal(galleryModal));
+    document.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => closeModal(document.getElementById(btn.dataset.close)));
+    });
+    [galleryModal, shareModal].forEach(modal => {
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(modal); });
+    });
+    confirmShare.addEventListener('click', () => {
+      if (activeShareCard) {
+        activeShareCard.classList.add('shared');
+        setTimeout(() => activeShareCard.classList.remove('shared'), 600);
+      }
+      closeModal(shareModal);
+    });
+
+    // Accessibility hint
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ') { e.preventDefault(); takePhoto(); }
+    });
+  </script>
+</body>
+</html>
