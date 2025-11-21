@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Camera</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Shadows+Into+Light&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaQ3vN8xmKQEiC5EvhczHxVh9Yx8RJWb1x1o1t4bm/FYnGV8eK3opgDdGztqKqRR3YKHyCuXapnwMaijFvS5g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    :root {
+      --cream: #f1ede3;
+      --cream-deep: #dcd6ca;
+      --dark: #222;
+      --accent: #ff6f5e;
+      --grey: #d6d6d6;
+      --shadow: 0 14px 28px rgba(0, 0, 0, 0.2), 0 10px 10px rgba(0, 0, 0, 0.14);
+      --card-bg: #fdfbf7;
+      --card-border: rgba(0, 0, 0, 0.06);
+      --card-shadow: 0 18px 38px rgba(0, 0, 0, 0.16);
+      --card-shadow-hover: 0 22px 48px rgba(0, 0, 0, 0.22);
+      --card-caption: #363636;
+      --card-date: #7a7a7a;
+      --share-border: rgba(0, 0, 0, 0.08);
+      --share-bg: rgba(255, 255, 255, 0.85);
+      --share-bg-hover: rgba(255, 255, 255, 0.95);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle, #dcdcdc 1px, transparent 1px), #f3f3f3;
+      background-size: 22px 22px;
+      min-height: 100vh;
+      color: var(--dark);
+      overflow: hidden;
+    }
+    .page {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 40px;
+      padding: 32px 40px 48px 40px;
+    }
+    header {
+      position: absolute;
+      top: 24px;
+      right: 32px;
+      display: flex;
+      gap: 12px;
+      z-index: 20;
+    }
+    .pill-btn {
+      padding: 12px 22px;
+      border-radius: 999px;
+      background: white;
+      border: 2px solid #c9c9c9;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .pill-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .pill-btn:active { transform: translateY(0); }
+    .camera-area {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .camera-wrapper {
+      position: relative;
+      width: min(560px, 84vw);
+      height: min(540px, 88vw);
+      border-radius: 20px;
+      padding: 16px;
+      background: linear-gradient(145deg, #4b4b4f 0%, #1f1f22 70%);
+      box-shadow:
+        0 28px 68px rgba(0,0,0,0.35),
+        inset 0 1px 0 rgba(255,255,255,0.35),
+        inset 0 -2px 10px rgba(0,0,0,0.35);
+      overflow: hidden;
+    }
+    .camera-wrapper::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.06), transparent 30%),
+        radial-gradient(circle at 80% 10%, rgba(255,255,255,0.05), transparent 32%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 6px),
+        repeating-linear-gradient(0deg, rgba(0,0,0,0.08) 0 1px, transparent 1px 3px);
+      opacity: 0.4;
+      pointer-events: none;
+      mix-blend-mode: soft-light;
+    }
+    .camera-body {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #d9d6cf 0%, #d1ccc3 52%, #2d2520 52%, #1c1613 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.65),
+        inset 0 -12px 20px rgba(0,0,0,0.35),
+        0 14px 26px rgba(0,0,0,0.35);
+      overflow: hidden;
+    }
+    .camera-frame-line {
+      position: absolute;
+      inset: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .camera-top-section {
+      position: relative;
+      height: 48%;
+      padding: 22px 28px 18px;
+      background: linear-gradient(180deg, #5b5c61 0%, #3c3d42 60%, #2b2b30 100%);
+      box-shadow:
+        inset 0 12px 20px rgba(255,255,255,0.08),
+        inset 0 -8px 16px rgba(0,0,0,0.35);
+      overflow: hidden;
+      z-index: 3;
+    }
+    .metal-brush {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 6px),
+        linear-gradient(180deg, rgba(255,255,255,0.22), rgba(0,0,0,0.32));
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .camera-topbar {
+      position: relative;
+      height: 100%;
+      border-radius: 12px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 18px;
+      padding: 12px 14px;
+      z-index: 2;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.22));
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -2px 6px rgba(0,0,0,0.35);
+    }
+    .rainbow-inset {
+      position: relative;
+      width: 90px;
+      height: 46px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #ff9a3c, #ffd95f, #4fd2e9, #8f6cff);
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,0.65),
+        inset 0 -4px 8px rgba(0,0,0,0.3),
+        0 4px 12px rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.32);
+      overflow: hidden;
+    }
+    .rainbow-inset::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(140deg, rgba(255,255,255,0.55), rgba(255,255,255,0) 55%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+    .camera-viewfinder {
+      position: relative;
+      width: 78px;
+      height: 46px;
+      border-radius: 6px;
+      background: radial-gradient(circle at 35% 35%, #262626, #060606);
+      box-shadow:
+        inset 0 2px 8px rgba(255,255,255,0.18),
+        inset 0 -2px 6px rgba(0,0,0,0.6),
+        0 10px 18px rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.2);
+      overflow: hidden;
+    }
+    .camera-viewfinder::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.22), transparent 60%);
+      pointer-events: none;
+    }
+    .camera-flash {
+      position: relative;
+      width: 108px;
+      height: 48px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #cfe7ef 0%, #9cb8c2 100%);
+      box-shadow:
+        inset 0 0 18px rgba(180, 230, 255, 0.8),
+        inset 0 2px 8px rgba(255,255,255,0.75),
+        0 12px 18px rgba(0,0,0,0.28);
+      border: 1px solid rgba(216,235,247,0.85);
+      overflow: hidden;
+    }
+    .camera-flash::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border-radius: 6px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0));
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+    .camera-bottom-section {
+      position: relative;
+      height: 52%;
+      background: linear-gradient(180deg, #1f1a16 0%, #17120f 100%);
+      box-shadow:
+        inset 0 10px 16px rgba(255,255,255,0.06),
+        inset 0 -14px 26px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    .leather-grain {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.04), transparent 28%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.03), transparent 30%),
+        repeating-linear-gradient(130deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 4px),
+        repeating-linear-gradient(45deg, rgba(0,0,0,0.2) 0 1px, transparent 1px 3px);
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .lens-mount {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      top: 146px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 4;
+      filter: drop-shadow(0 22px 30px rgba(0,0,0,0.45));
+    }
+    .lens-mount::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 25%, #5a5a60, #1f1f23 60%);
+      box-shadow: inset 0 12px 24px rgba(0,0,0,0.45), inset 0 -10px 18px rgba(255,255,255,0.15);
+      z-index: 0;
+    }
+    .camera-lens {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      padding: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 35% 30%, #2b2b2f, #0f0f10 70%);
+      box-shadow:
+        inset 0 10px 20px rgba(255,255,255,0.08),
+        inset 0 -14px 22px rgba(0,0,0,0.55),
+        0 18px 28px rgba(0,0,0,0.45);
+      overflow: hidden;
+    }
+    .lens-bezel {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4c4c52 0%, #26262c 45%, #57575e 80%, #15151a 100%);
+      box-shadow:
+        inset 0 2px 10px rgba(255,255,255,0.14),
+        inset 0 -6px 12px rgba(0,0,0,0.55);
+      z-index: 0;
+    }
+    .lens-ring {
+      position: absolute;
+      inset: 18px;
+      border-radius: 50%;
+      background:
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 4px, transparent 4px 8px),
+        linear-gradient(160deg, #101012, #2c2c31);
+      box-shadow: inset 0 8px 14px rgba(255,255,255,0.06), inset 0 -10px 16px rgba(0,0,0,0.65);
+      z-index: 1;
+    }
+    .lens-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      padding: 32px;
+      z-index: 2;
+    }
+    .lens-glass {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 70% 70%, rgba(0,0,0,0.55), rgba(0,0,0,0.78)),
+        radial-gradient(circle at 24% 18%, rgba(255,255,255,0.2), transparent 50%);
+      box-shadow: inset 0 12px 20px rgba(0,0,0,0.65), inset 0 -14px 18px rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .lens-glass video,
+    .lens-glass .fallback {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+      position: absolute;
+      inset: 0;
+    }
+    .lens-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle at 22% 22%, rgba(255,255,255,0.75), rgba(255,255,255,0) 55%);
+      pointer-events: none;
+      mix-blend-mode: screen;
+      z-index: 3;
+    }
+    .lens-highlight {
+      position: absolute;
+      inset: -10px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 28% 18%, rgba(255,255,255,0.5), transparent 45%),
+        radial-gradient(circle at 65% 80%, rgba(0,0,0,0.35), transparent 50%);
+      pointer-events: none;
+      z-index: 4;
+      mix-blend-mode: screen;
+    }
+    .fallback {
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      background: radial-gradient(circle at 40% 40%, rgba(255,255,255,0.22), rgba(0,0,0,0.8));
+      font-weight: 600;
+    }
+    .lens-reflection {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 210deg, rgba(255,255,255,0.2), rgba(255,255,255,0) 30%, rgba(255,255,255,0.4) 40%, rgba(255,255,255,0) 65%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .camera-nameplate {
+      position: absolute;
+      bottom: 50px;
+      left: 42px;
+      padding: 8px 14px;
+      background: linear-gradient(180deg, #c0b5a4, #9f927e);
+      color: #24211c;
+      font-weight: 700;
+      letter-spacing: 0.24em;
+      font-size: 12px;
+      text-transform: uppercase;
+      border-radius: 4px;
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.35), inset 0 -3px 4px rgba(0,0,0,0.35), 0 4px 10px rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.4);
+      z-index: 5;
+    }
+    .shutter-button {
+      position: absolute;
+      bottom: 34px;
+      right: 40px;
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 30%, #ffcc9c, #d05f36 68%, #9b4224 100%);
+      box-shadow:
+        0 20px 26px rgba(0,0,0,0.32),
+        0 0 0 6px rgba(0,0,0,0.45),
+        inset 0 10px 18px rgba(255,255,255,0.2),
+        inset 0 -12px 16px rgba(0,0,0,0.5);
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+      z-index: 6;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    .shutter-button::after {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.45), rgba(255,255,255,0) 65%);
+      box-shadow: inset 0 1px 8px rgba(255,255,255,0.6), inset 0 -6px 12px rgba(0,0,0,0.45);
+      pointer-events: none;
+    }
+    .shutter-button:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow:
+        0 22px 32px rgba(0,0,0,0.36),
+        0 0 0 6px rgba(0,0,0,0.48),
+        inset 0 12px 18px rgba(255,255,255,0.22),
+        inset 0 -14px 18px rgba(0,0,0,0.55);
+    }
+    .shutter-button:active { transform: scale(0.97); }
+    .camera-shadow {
+      position: absolute;
+      left: -50px;
+      right: -50px;
+      bottom: -70px;
+      height: 150px;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0.22), transparent 70%);
+      filter: blur(22px);
+      opacity: 0.75;
+      z-index: 1;
+    }
+    .board-area {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      height: 100%;
+    }
+    .style-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 16px;
+      padding: 10px 14px;
+      box-shadow: 0 12px 22px rgba(0,0,0,0.12);
+      width: fit-content;
+    }
+    .style-picker .label { font-weight: 700; font-size: 13px; letter-spacing: 0.05em; }
+    .style-options { display: flex; gap: 8px; }
+    .style-option {
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 14px;
+      padding: 8px 12px;
+      background: #f8f8f8;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .style-option:hover { transform: translateY(-2px); box-shadow: 0 10px 18px rgba(0,0,0,0.14); }
+    .style-option.active { background: #fff; border-color: #a27dfc; box-shadow: 0 12px 24px rgba(130,111,255,0.22); }
+    .style-option[data-style="business"] { background: linear-gradient(135deg, #ffffff, #eef0f4); }
+    .style-option[data-style="cartoon"] { background: linear-gradient(135deg, #ffe7ef, #d2ffe5); }
+    .style-option[data-style="cyberpunk"] { background: linear-gradient(135deg, #0f1624, #1f2a3d); color: #d5f7ff; border-color: rgba(137,242,255,0.5); }
+
+    .board {
+      position: relative;
+      flex: 1;
+      background: linear-gradient(180deg, #f4f4f4, #e8e8e8);
+      border: 2px dashed #d0d0d0;
+      border-radius: 20px;
+      box-shadow: inset 0 4px 12px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    .board::after {
+      content: 'Snap a moment';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: #b5b5b5;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    .board.has-content::after { display: none; }
+
+    .polaroid,
+    .polaroid-card {
+      --frame-bg: #fdfbf6;
+      --frame-border: 1px solid rgba(0,0,0,0.12);
+      --frame-radius: 14px;
+      --frame-shadow: 0 16px 32px rgba(0,0,0,0.16);
+      --frame-padding: 14px 14px 20px;
+      --photo-padding: 0px;
+      --photo-border: none;
+      --photo-radius: 10px;
+      --photo-backdrop: linear-gradient(180deg, #f0f0f0, #e3e3e3);
+      --photo-shadow: inset 0 2px 6px rgba(0,0,0,0.08);
+      --caption-font: 'Montserrat', sans-serif;
+      --caption-color: #363636;
+      --caption-size: 16px;
+      --caption-align: center;
+      --caption-tilt: none;
+      --caption-gap: 12px;
+      --date-color: #7a7a7a;
+      --date-weight: 600;
+      --date-align: flex-start;
+      --actions-justify: flex-end;
+      position: absolute;
+      width: 220px;
+      background: var(--frame-bg);
+      border-radius: var(--frame-radius);
+      border: var(--frame-border);
+      box-shadow: var(--frame-shadow);
+      padding: var(--frame-padding);
+      cursor: grab;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      user-select: none;
+      isolation: isolate;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .polaroid:hover,
+    .polaroid-card:hover { transform: translateY(-3px) rotate(var(--hover-tilt, 0deg)); box-shadow: var(--card-shadow-hover, var(--frame-shadow)); }
+    .polaroid.shared,
+    .polaroid-card.shared { box-shadow: 0 20px 44px rgba(255,111,94,0.3); }
+    .polaroid.dragging,
+    .polaroid-card.dragging { cursor: grabbing; box-shadow: var(--card-shadow-hover, var(--frame-shadow)); }
+    .photo-wrap {
+      position: relative;
+      width: 100%;
+      border-radius: calc(var(--photo-radius) + 2px);
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .photo-wrap img {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      border-radius: var(--photo-radius);
+      display: block;
+      background: var(--photo-backdrop);
+      box-shadow: var(--photo-shadow);
+      padding: var(--photo-padding);
+      border: var(--photo-border);
+      position: relative;
+      z-index: 1;
+    }
+    .sticker-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .sticker-instance {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(var(--sticker-scale, 1));
+      font-size: 48px;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.18));
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s ease;
+      pointer-events: auto;
+    }
+    .sticker-instance.dragging { cursor: grabbing; }
+    .sticker-controls {
+      position: absolute;
+      bottom: -8px;
+      right: -8px;
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 10px;
+      padding: 4px 6px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+      pointer-events: auto;
+    }
+    .sticker-controls button {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.12);
+      background: #f7f7f7;
+      cursor: pointer;
+      padding: 0;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .sticker-controls button:hover { background: #fff; }
+    .caption {
+      font-family: var(--caption-font);
+      color: var(--caption-color);
+      font-size: var(--caption-size);
+      margin: var(--caption-gap) 6px 6px;
+      min-height: 24px;
+      letter-spacing: 0.02em;
+      text-align: var(--caption-align);
+      transform: var(--caption-tilt);
+    }
+    .caption input {
+      font-family: var(--caption-font);
+      font-size: var(--caption-size);
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #cfcfcf;
+      outline: none;
+      background: #fffaf0;
+      padding: 4px 2px;
+      border-radius: 6px;
+    }
+    .date {
+      font-size: 12px;
+      color: var(--date-color);
+      letter-spacing: 0.08em;
+      margin-left: 6px;
+      font-weight: var(--date-weight);
+      align-self: var(--date-align);
+    }
+    .polaroid .actions,
+    .polaroid-card .actions {
+      display: flex;
+      justify-content: var(--actions-justify);
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .tiny-btn {
+      background: var(--share-bg);
+      border: 1px solid var(--share-border);
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .tiny-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 16px rgba(0,0,0,0.12); background: var(--share-bg-hover); border-color: rgba(0,0,0,0.16); }
+
+    .polaroid--business {
+      --frame-bg: #ffffff;
+      --frame-border: 1px solid rgba(0,0,0,0.25);
+      --frame-radius: 6px;
+      --frame-shadow: 0 8px 16px rgba(0,0,0,0.12);
+      --card-shadow-hover: 0 12px 22px rgba(0,0,0,0.16);
+      --frame-padding: 12px 12px 16px;
+      --caption-font: 'Montserrat', sans-serif;
+      --caption-color: #222;
+      --caption-size: 16px;
+      --caption-align: center;
+      --caption-gap: 12px;
+      --date-color: #555;
+      --date-weight: 600;
+      --photo-radius: 8px;
+      --photo-border: 1px solid rgba(0,0,0,0.08);
+      --photo-backdrop: linear-gradient(180deg, #f8f8f8, #ededed);
+      --photo-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    .polaroid--cartoon {
+      --frame-bg: linear-gradient(135deg, #fff0f6 0%, #f8fffb 60%, #fff7d6 100%);
+      --frame-border: 4px solid #ff8eb0;
+      --frame-radius: 24px;
+      --frame-shadow: 0 20px 30px rgba(0,0,0,0.18);
+      --card-shadow-hover: 0 26px 46px rgba(0,0,0,0.24);
+      --frame-padding: 26px 18px 26px;
+      --caption-font: 'Fredoka', 'Shadows Into Light', cursive;
+      --caption-color: #2f1b2e;
+      --caption-size: 19px;
+      --caption-align: left;
+      --caption-gap: 12px;
+      --caption-tilt: rotate(-2deg);
+      --date-color: #6d566c;
+      --date-weight: 700;
+      --photo-padding: 10px;
+      --photo-border: 3px solid #ffffff;
+      --photo-radius: 16px;
+      --photo-backdrop: linear-gradient(135deg, #ffe2ec, #fff7f9 70%);
+      --photo-shadow: inset 0 3px 10px rgba(0,0,0,0.08);
+      --hover-tilt: 2.5deg;
+    }
+
+    .polaroid--cartoon::before,
+    .polaroid--cartoon::after {
+      content: '';
+      position: absolute;
+      width: 56px;
+      height: 16px;
+      border-radius: 12px;
+      background: linear-gradient(120deg, #ffe08a, #c5ffd8, #ffb5d0);
+      opacity: 0.95;
+      box-shadow: 0 8px 14px rgba(0,0,0,0.12);
+      z-index: 0;
+    }
+    .polaroid--cartoon::before { top: 10px; left: 12px; transform: rotate(-8deg); }
+    .polaroid--cartoon::after { bottom: 14px; right: 12px; transform: rotate(8deg); }
+
+    .polaroid--cartoon .caption { letter-spacing: 0.04em; }
+    .polaroid--cartoon .date { font-size: 12px; }
+    .polaroid--cartoon .actions .tiny-btn { background: rgba(255,255,255,0.86); }
+    .polaroid--cartoon {
+      background-image:
+        radial-gradient(circle at 14% 18%, rgba(255,160,190,0.14), transparent 40%),
+        radial-gradient(circle at 82% 10%, rgba(170,230,220,0.18), transparent 36%),
+        radial-gradient(circle at 20% 86%, rgba(255,230,150,0.16), transparent 34%);
+    }
+
+    .polaroid--cyberpunk {
+      --frame-bg: #0f0f14;
+      --frame-border: 1px solid rgba(137,242,255,0.55);
+      --frame-radius: 16px;
+      --frame-shadow: 0 18px 30px rgba(0,32,64,0.45);
+      --card-shadow-hover: 0 24px 42px rgba(0,32,64,0.58);
+      --frame-padding: 14px 14px 18px;
+      --caption-font: 'Courier New', monospace;
+      --caption-color: #89f2ff;
+      --caption-size: 14px;
+      --caption-align: left;
+      --caption-gap: 10px;
+      --caption-tilt: none;
+      --date-color: #a6a6a6;
+      --date-weight: 500;
+      --actions-justify: flex-start;
+      --photo-padding: 4px;
+      --photo-border: 1px solid rgba(137,242,255,0.5);
+      --photo-radius: 10px;
+      --photo-backdrop: radial-gradient(circle at 20% 20%, rgba(137,242,255,0.12), rgba(255,0,255,0.08), rgba(0,0,0,0.75));
+      --photo-shadow: inset 0 2px 10px rgba(0,0,0,0.4);
+      --hover-tilt: 0deg;
+      background-image:
+        linear-gradient(135deg, rgba(137,242,255,0.08), rgba(255,0,255,0.08)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 5px);
+    }
+
+    .polaroid--cyberpunk::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 12px;
+      background:
+        linear-gradient(135deg, rgba(137,242,255,0.08) 0%, rgba(255,0,255,0.06) 40%, rgba(137,242,255,0.08) 100%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 2px, transparent 2px 6px);
+      box-shadow: 0 0 24px rgba(137,242,255,0.25);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .polaroid--cyberpunk::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      background: radial-gradient(circle at 20% 20%, rgba(255,0,255,0.16), transparent 45%), radial-gradient(circle at 80% 80%, rgba(80,160,255,0.18), transparent 40%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .polaroid-sticker {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      width: 52px;
+      height: 18px;
+      border-radius: 8px;
+      background: linear-gradient(120deg, rgba(255,210,120,0.95), rgba(255,170,200,0.95));
+      box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+      transform: rotate(-6deg);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .polaroid--cartoon .polaroid-sticker { opacity: 1; }
+
+    .sticker-panel {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 12px;
+      box-shadow: 0 14px 28px rgba(0,0,0,0.16);
+      padding: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+      min-width: 170px;
+    }
+    .sticker-panel.open { display: flex; }
+    .sticker-panel h4 {
+      margin: 0;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #444;
+    }
+    .sticker-options { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px; }
+    .sticker-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.08);
+      background: linear-gradient(135deg, #fdfdfd, #f4f7fb);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+    .sticker-option:hover { transform: translateY(-1px); box-shadow: 0 10px 16px rgba(0,0,0,0.12); border-color: rgba(0,0,0,0.16); }
+
+    .footer-left {
+      position: absolute;
+      bottom: 18px; left: 24px;
+      z-index: 15;
+    }
+    .footer-right {
+      position: absolute;
+      bottom: 18px; right: 24px;
+      color: #707070;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+    }
+    .ghost-btn {
+      background: rgba(255,255,255,0.8);
+      border: 1px solid #cfcfcf;
+      border-radius: 14px;
+      padding: 8px 14px;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+      font-weight: 600;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .ghost-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 16px;
+      width: min(420px, 90vw);
+      padding: 26px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .modal h3 { margin-top: 0; }
+    .modal .close-btn {
+      margin-top: 16px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: #1f1f1f;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    @media (max-width: 980px) {
+      body { overflow-y: auto; }
+      .page { grid-template-columns: 1fr; grid-template-rows: auto auto; height: auto; }
+      .board { min-height: 460px; }
+      .camera-wrapper { margin-top: 40px; }
+      header { position: fixed; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="pill-btn" id="downloadBtn">DOWNLOAD</button>
+    <button class="pill-btn" id="resetBtn">RESET</button>
+  </header>
+  <div class="page">
+    <div class="camera-area">
+      <div class="camera-wrapper">
+        <div class="camera-body">
+          <div class="camera-frame-line"></div>
+          <div class="camera-top-section">
+            <div class="metal-brush"></div>
+            <div class="camera-topbar">
+              <div class="camera-viewfinder"></div>
+              <div class="rainbow-inset"></div>
+              <div class="camera-flash"></div>
+            </div>
+          </div>
+          <div class="camera-bottom-section">
+            <div class="leather-grain"></div>
+          </div>
+          <div class="lens-mount">
+            <div class="camera-lens" id="lens">
+              <div class="lens-bezel"></div>
+              <div class="lens-ring"></div>
+              <div class="lens-inner">
+                <div class="lens-glass">
+                  <video id="video" autoplay playsinline muted></video>
+                  <div class="fallback" id="fallback">Allow webcam to see live preview.</div>
+                </div>
+                <div class="lens-overlay"></div>
+                <div class="lens-highlight"></div>
+                <div class="lens-reflection"></div>
+              </div>
+            </div>
+          </div>
+          <div class="camera-nameplate">RETROCAM</div>
+          <div class="shutter-button" id="shutter"></div>
+        </div>
+      </div>
+    </div>
+    <div class="board-area">
+      <div class="style-picker" id="stylePicker">
+        <span class="label">Frame style</span>
+        <div class="style-options">
+          <button class="style-option active" data-style="business">Business</button>
+          <button class="style-option" data-style="cartoon">Cartoon</button>
+          <button class="style-option" data-style="cyberpunk">Cyberpunk</button>
+        </div>
+      </div>
+      <div class="board" id="board"></div>
+    </div>
+  </div>
+  <div class="footer-left">
+    <button class="ghost-btn" id="galleryBtn">View Public Pinboard Gallery</button>
+  </div>
+  <div class="footer-right">Use Once to capture your day through everyone's eyes</div>
+
+  <canvas id="captureCanvas" width="640" height="480" style="display:none;"></canvas>
+
+  <div class="modal-backdrop" id="galleryModal">
+    <div class="modal">
+      <h3>Public Pinboard Gallery</h3>
+      <p>This is a demo gallery. In the real app, we would show shared photos here.</p>
+      <button class="close-btn" data-close="galleryModal">Close</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="shareModal">
+    <div class="modal">
+      <h3>Share to Public Pinboard?</h3>
+      <p>There's no backend here, but imagine your snap being shared with the world.</p>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+        <button class="pill-btn" id="confirmShare">Share</button>
+        <button class="pill-btn" data-close="shareModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STICKERS = [
+      { id: 'cat-ears', label: 'Cat ears', emoji: '🐱' },
+      { id: 'sunglasses', label: 'Sunglasses', emoji: '🕶️' },
+      { id: 'crown', label: 'Crown', emoji: '👑' },
+      { id: 'heart', label: 'Heart', emoji: '❤️' }
+    ];
+
+    const video = document.getElementById('video');
+    const fallback = document.getElementById('fallback');
+    const shutter = document.getElementById('shutter');
+    const lens = document.getElementById('lens');
+    const canvas = document.getElementById('captureCanvas');
+    const board = document.getElementById('board');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const galleryBtn = document.getElementById('galleryBtn');
+    const galleryModal = document.getElementById('galleryModal');
+    const shareModal = document.getElementById('shareModal');
+    const confirmShare = document.getElementById('confirmShare');
+    const styleOptions = document.querySelectorAll('.style-option');
+
+    let currentStream = null;
+    let zIndexCounter = 10;
+    let activeShareCard = null;
+    let currentPolaroidStyle = 'business';
+    let openStickerPanel = null;
+
+    // Webcam setup
+    async function initWebcam() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        currentStream = stream;
+        video.srcObject = stream;
+        video.onloadedmetadata = () => video.play();
+        fallback.style.display = 'none';
+      } catch (err) {
+        console.error('Webcam error', err);
+        fallback.textContent = 'Webcam not available. Grant permission to preview.';
+        fallback.style.display = 'flex';
+      }
+    }
+    initWebcam();
+
+    // Capture logic
+    function captureFrame() {
+      if (!video.videoWidth) return null;
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/png');
+    }
+
+    function formatToday() {
+      const d = new Date();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}/${mm}/${dd}`;
+    }
+
+    // Style selection
+    styleOptions.forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentPolaroidStyle = btn.dataset.style;
+        styleOptions.forEach(opt => opt.classList.toggle('active', opt === btn));
+      });
+    });
+
+    function closeAllStickerPanels() {
+      document.querySelectorAll('.sticker-panel').forEach(panel => panel.classList.remove('open'));
+      openStickerPanel = null;
+    }
+
+    function attachStickerDragging(sticker, layer) {
+      let dragging = false;
+      let offsetX = 0;
+      let offsetY = 0;
+      const start = (e) => {
+        dragging = true;
+        sticker.classList.add('dragging');
+        const rect = sticker.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        offsetX = clientX - rect.left;
+        offsetY = clientY - rect.top;
+        e.preventDefault();
+        e.stopPropagation();
+      };
+      const move = (e) => {
+        if (!dragging) return;
+        const layerRect = layer.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = Math.min(layerRect.width, Math.max(0, clientX - layerRect.left - offsetX));
+        const y = Math.min(layerRect.height, Math.max(0, clientY - layerRect.top - offsetY));
+        sticker.style.left = `${x}px`;
+        sticker.style.top = `${y}px`;
+      };
+      const end = () => { dragging = false; sticker.classList.remove('dragging'); };
+      sticker.addEventListener('mousedown', start);
+      sticker.addEventListener('touchstart', start, { passive: false });
+      window.addEventListener('mousemove', move);
+      window.addEventListener('touchmove', move);
+      window.addEventListener('mouseup', end);
+      window.addEventListener('touchend', end);
+    }
+
+    function createStickerElement(def, layer) {
+      const sticker = document.createElement('div');
+      sticker.className = 'sticker-instance';
+      sticker.textContent = def.emoji;
+      sticker.dataset.scale = '1';
+      sticker.style.left = `${layer.clientWidth / 2}px`;
+      sticker.style.top = `${layer.clientHeight / 2}px`;
+
+      const controls = document.createElement('div');
+      controls.className = 'sticker-controls';
+      const minus = document.createElement('button');
+      minus.textContent = '-';
+      const plus = document.createElement('button');
+      plus.textContent = '+';
+      controls.appendChild(minus);
+      controls.appendChild(plus);
+
+      const setScale = (val) => {
+        const clamped = Math.max(0.6, Math.min(2.2, val));
+        sticker.dataset.scale = clamped;
+        sticker.style.setProperty('--sticker-scale', clamped);
+      };
+
+      const adjust = (delta) => setScale(parseFloat(sticker.dataset.scale || '1') + delta);
+      minus.addEventListener('click', (e) => { e.stopPropagation(); adjust(-0.15); });
+      plus.addEventListener('click', (e) => { e.stopPropagation(); adjust(0.15); });
+
+      sticker.appendChild(controls);
+      attachStickerDragging(sticker, layer);
+      setScale(1);
+      return sticker;
+    }
+
+    function createStickerPanel(layer) {
+      const panel = document.createElement('div');
+      panel.className = 'sticker-panel';
+      const title = document.createElement('h4');
+      title.textContent = 'Add stickers';
+      const grid = document.createElement('div');
+      grid.className = 'sticker-options';
+      STICKERS.forEach(def => {
+        const opt = document.createElement('button');
+        opt.className = 'sticker-option';
+        opt.textContent = `${def.emoji} ${def.label}`;
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const sticker = createStickerElement(def, layer);
+          layer.appendChild(sticker);
+        });
+        grid.appendChild(opt);
+      });
+      panel.appendChild(title);
+      panel.appendChild(grid);
+      panel.addEventListener('click', (e) => e.stopPropagation());
+      return panel;
+    }
+
+    function createPolaroid(imgSrc) {
+      const card = document.createElement('div');
+      card.className = 'polaroid polaroid-card';
+      card.classList.add(`polaroid--${currentPolaroidStyle}`);
+      const sticker = document.createElement('div');
+      sticker.className = 'polaroid-sticker';
+
+      const photoWrap = document.createElement('div');
+      photoWrap.className = 'photo-wrap';
+      const img = document.createElement('img');
+      img.src = imgSrc;
+      const stickerLayer = document.createElement('div');
+      stickerLayer.className = 'sticker-layer';
+      photoWrap.appendChild(img);
+      photoWrap.appendChild(stickerLayer);
+
+      const caption = document.createElement('div');
+      caption.className = 'caption';
+      caption.textContent = 'MAY I MEET YOU';
+
+      const date = document.createElement('div');
+      date.className = 'date';
+      date.textContent = formatToday();
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      const stickerBtn = document.createElement('button');
+      stickerBtn.className = 'tiny-btn sticker-trigger';
+      stickerBtn.textContent = 'Stickers';
+      const shareBtn = document.createElement('button');
+      shareBtn.className = 'tiny-btn';
+      shareBtn.textContent = 'Share';
+      actions.appendChild(stickerBtn);
+      actions.appendChild(shareBtn);
+
+      const stickerPanel = createStickerPanel(stickerLayer);
+
+      card.appendChild(sticker);
+      card.appendChild(photoWrap);
+      card.appendChild(caption);
+      card.appendChild(date);
+      card.appendChild(actions);
+      card.appendChild(stickerPanel);
+
+      // Random rotation and offset
+      const rotation = (Math.random() * 16) - 8;
+      const availableX = Math.max(40, board.clientWidth - 220);
+      const availableY = Math.max(60, board.clientHeight - 280);
+      const offsetX = 20 + Math.random() * availableX;
+      const offsetY = 20 + Math.random() * availableY;
+      card.style.transform = `rotate(${rotation}deg)`;
+      card.style.left = `${offsetX}px`;
+      card.style.top = `${offsetY}px`;
+      card.style.zIndex = ++zIndexCounter;
+
+      enableDragging(card);
+      enableCaptionEditing(caption);
+      shareBtn.addEventListener('click', () => {
+        activeShareCard = card;
+        openModal(shareModal);
+      });
+      stickerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (openStickerPanel && openStickerPanel !== stickerPanel) {
+          openStickerPanel.classList.remove('open');
+        }
+        stickerPanel.classList.toggle('open');
+        openStickerPanel = stickerPanel.classList.contains('open') ? stickerPanel : null;
+      });
+
+      board.appendChild(card);
+      board.classList.add('has-content');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.sticker-panel') && !e.target.closest('.sticker-trigger')) {
+        closeAllStickerPanels();
+      }
+    });
+
+    function enableCaptionEditing(captionEl) {
+      captionEl.addEventListener('click', () => {
+        const currentText = captionEl.textContent;
+        const input = document.createElement('input');
+        input.value = currentText;
+        captionEl.textContent = '';
+        captionEl.appendChild(input);
+        input.focus();
+        const commit = () => {
+          captionEl.textContent = input.value || 'MAY I MEET YOU';
+        };
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') input.blur();
+          if (e.key === 'Escape') { input.value = currentText; input.blur(); }
+        });
+      });
+    }
+
+    // Drag and drop
+    function enableDragging(card) {
+      let offsetX = 0, offsetY = 0, dragging = false;
+      const startDrag = (e) => {
+        dragging = true;
+        card.classList.add('dragging');
+        card.style.zIndex = ++zIndexCounter;
+        const rect = card.getBoundingClientRect();
+        const boardRect = board.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        offsetX = clientX - rect.left;
+        offsetY = clientY - rect.top;
+        e.preventDefault();
+      };
+      const onMove = (e) => {
+        if (!dragging) return;
+        const boardRect = board.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - boardRect.left - offsetX;
+        const y = clientY - boardRect.top - offsetY;
+        card.style.left = `${Math.min(boardRect.width - card.offsetWidth, Math.max(0, x))}px`;
+        card.style.top = `${Math.min(boardRect.height - card.offsetHeight, Math.max(0, y))}px`;
+      };
+      const endDrag = () => { dragging = false; card.classList.remove('dragging'); };
+      card.addEventListener('mousedown', startDrag);
+      card.addEventListener('touchstart', startDrag);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('touchmove', onMove);
+      window.addEventListener('mouseup', endDrag);
+      window.addEventListener('touchend', endDrag);
+    }
+
+    // Download board
+    downloadBtn.addEventListener('click', async () => {
+      if (!board.children.length) return;
+      const canvasOut = await html2canvas(board, { backgroundColor: null });
+      const link = document.createElement('a');
+      link.download = 'retro-camera.png';
+      link.href = canvasOut.toDataURL('image/png');
+      link.click();
+    });
+
+    // Reset board
+    resetBtn.addEventListener('click', () => {
+      board.innerHTML = '';
+      board.classList.remove('has-content');
+    });
+
+    // Capture events
+    const takePhoto = () => {
+      const src = captureFrame();
+      if (src) createPolaroid(src);
+    };
+    shutter.addEventListener('click', takePhoto);
+    lens.addEventListener('click', takePhoto);
+
+    // Modals
+    function openModal(modal) { modal.classList.add('active'); }
+    function closeModal(modal) { modal.classList.remove('active'); }
+    galleryBtn.addEventListener('click', () => openModal(galleryModal));
+    document.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => closeModal(document.getElementById(btn.dataset.close)));
+    });
+    [galleryModal, shareModal].forEach(modal => {
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(modal); });
+    });
+    confirmShare.addEventListener('click', () => {
+      if (activeShareCard) {
+        activeShareCard.classList.add('shared');
+        setTimeout(() => activeShareCard.classList.remove('shared'), 600);
+      }
+      closeModal(shareModal);
+    });
+
+    // Accessibility hint
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ') { e.preventDefault(); takePhoto(); }
+    });
+  </script>
+</body>
+</html>
